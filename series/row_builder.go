@@ -104,7 +104,8 @@ func NewRowBuilder() (
 	}, releaseFunc
 }
 
-func newRowBuilder() *RowBuilder {
+// CreateRowBuilder creates a new row builder, not reused builder.
+func CreateRowBuilder() *RowBuilder {
 	return &RowBuilder{flatBuilder: flatbuffers.NewBuilder(1536)}
 }
 

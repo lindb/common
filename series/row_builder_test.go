@@ -50,7 +50,7 @@ func Test_NewRowBuilder(t *testing.T) {
 }
 
 func Test_RowBuilder_ErrorCases(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	// tags validation
 	assert.Error(t, rb.AddTag(nil, nil))
 	assert.Error(t, rb.AddTag([]byte("tag-key"), nil))
@@ -105,7 +105,7 @@ func Test_RowBuilder_ErrorCases(t *testing.T) {
 }
 
 func Test_RowBuilder_BuildError(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	_, err := rb.Build()
 	assert.Error(t, err)
 
@@ -120,13 +120,13 @@ func Test_RowBuilder_BuildError(t *testing.T) {
 }
 
 func Test_RowBuilder_OneSimpleField(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	rb.AddMetricName([]byte("cpu"))
 	_ = rb.AddSimpleField([]byte("idle"), flatMetricsV1.SimpleFieldTypeLast, 1)
 }
 
 func Test_RowBuilder_BuildTo(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	assert.NoError(t, rb.AddTag([]byte("ip"), []byte("1.1.1.1")))
 	assert.NoError(t, rb.AddTag([]byte("host"), []byte("dev-ecs")))
 	rb.AddMetricName([]byte("cpu|load"))
@@ -140,7 +140,7 @@ func Test_RowBuilder_BuildTo(t *testing.T) {
 }
 
 func Test_dedupTagsThenXXHash(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	_ = rb.AddTag([]byte("ccc"), []byte("a"))
 	_ = rb.AddTag([]byte("d"), []byte("b"))
 	_ = rb.AddTag([]byte("a"), []byte("c"))
@@ -158,14 +158,14 @@ func Test_dedupTagsThenXXHash(t *testing.T) {
 }
 
 func Test_dedupTags_EmptyKVs(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	hash1 := rb.dedupTagsThenXXHash()
 	assert.Equal(t, "", rb.hashBuf.String())
 	assert.Equal(t, hash1, emptyStringHash)
 }
 
 func Test_dedupTags_SortedKVs(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	_ = rb.AddTag([]byte("a"), []byte("a"))
 	_ = rb.AddTag([]byte("c"), []byte("c"))
 	_ = rb.dedupTagsThenXXHash()
@@ -173,7 +173,7 @@ func Test_dedupTags_SortedKVs(t *testing.T) {
 }
 
 func Test_dedupTagsThenXXHash_One(t *testing.T) {
-	rb := newRowBuilder()
+	rb := CreateRowBuilder()
 	_ = rb.AddTag([]byte("ccc"), []byte("a"))
 	_ = rb.AddTag([]byte("ccc"), []byte("b"))
 	_ = rb.AddTag([]byte("ccc"), []byte("c"))
