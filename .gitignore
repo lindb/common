@@ -1,0 +1,35 @@
+.idea/
+test_data
+bin/
+.vscode/
+.DS_Store
+*.log
+.history
+*.bat
+
+# temp file during testing
+*.test
+cpu_profile
+*gomock*
+*.db
+
+## Go
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# mock files
+*mock.go
+*mock.pb.go
+*mock_test.go
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+data
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
