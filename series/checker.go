@@ -27,7 +27,7 @@ func SanitizeMetricName(metricName string) string {
 	if !strings.Contains(metricName, "|") {
 		return metricName
 	}
-	return strings.Replace(metricName, "|", "_", -1)
+	return strings.ReplaceAll(metricName, "|", "_")
 }
 
 // SanitizeNamespace checks if namespace is in necessary of sanitizing
@@ -35,7 +35,7 @@ func SanitizeNamespace(namespace string) string {
 	if !strings.Contains(namespace, "|") {
 		return namespace
 	}
-	return strings.Replace(namespace, "|", "_", -1)
+	return strings.ReplaceAll(namespace, "|", "_")
 }
 
 func ShouldSanitizeNamespaceOrMetricName(name []byte) bool {

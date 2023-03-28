@@ -1,4 +1,4 @@
-name: LinDB CI
+name: LinDB Common CI
 on: [push, pull_request]
 jobs:
   test-with-coverage:
@@ -12,8 +12,10 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           cache: true
         id: go
       - name: Test
         run: make test
+      - name: Upload
+        run: bash <(curl -s https://codecov.io/bash) -t 0dc96dff-2c87-4f72-bd18-a4a816ebe107
