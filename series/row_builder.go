@@ -222,8 +222,6 @@ func (rb *RowBuilder) AddMetricName(metricName []byte) {
 	rb.metricName = append(rb.metricName[:0], metricName...)
 }
 
-var defaultNameSpace = []byte(constants.DefaultNamespace)
-
 func (rb *RowBuilder) AddNameSpace(namespace []byte) {
 	if ShouldSanitizeNamespaceOrMetricName(namespace) {
 		namespace = SanitizeNamespaceOrMetricName(namespace)
@@ -232,6 +230,7 @@ func (rb *RowBuilder) AddNameSpace(namespace []byte) {
 }
 
 func (rb *RowBuilder) Reset() {
+	// reset flat builder context
 	rb.flatBuilder.Reset()
 	rb.metricName = rb.metricName[:0]
 	rb.nameSpace = rb.nameSpace[:0]
@@ -251,8 +250,6 @@ func (rb *RowBuilder) Reset() {
 	rb.compoundFieldSum = 0
 	rb.compoundFieldCount = 0
 
-	// reset flat builder context
-	rb.flatBuilder.Reset()
 	rb.keys = rb.keys[:0]
 	rb.values = rb.values[:0]
 	rb.kvs = rb.kvs[:0]
@@ -391,9 +388,12 @@ func (rb *RowBuilder) Build() ([]byte, error) {
 
 Serialize:
 	metricName := rb.flatBuilder.CreateByteString(rb.metricName)
+
 	if len(rb.nameSpace) == 0 {
-		rb.nameSpace = defaultNameSpace
+		// be careful, rb.namespace is reused, need create new default value
+		rb.nameSpace = []byte(constants.DefaultNamespace)
 	}
+
 	namespace := rb.flatBuilder.CreateByteString(rb.nameSpace)
 	flatMetricsV1.MetricStart(rb.flatBuilder)
 	flatMetricsV1.MetricAddNamespace(rb.flatBuilder, namespace)

@@ -49,6 +49,28 @@ func Test_NewRowBuilder(t *testing.T) {
 	}
 }
 
+func Test_RowBuilder(t *testing.T) {
+	rb, releaseFunc := NewRowBuilder()
+	defer releaseFunc(rb)
+	for i := 0; i < 20; i++ {
+		assert.NoError(t, rb.AddTag([]byte("a"), []byte("b")))
+		assert.NoError(t, rb.AddSimpleField([]byte("f1"), flatMetricsV1.SimpleFieldTypeDeltaSum, 1))
+		if i%2 == 0 {
+			rb.AddNameSpace([]byte("test"))
+		}
+		rb.AddMetricName([]byte("namespace"))
+		rb.AddTimestamp(111111)
+		_, err := rb.Build()
+		assert.NoError(t, err)
+		if i%2 == 0 {
+			assert.Equal(t, "test", string(rb.nameSpace))
+		} else {
+			assert.Equal(t, "default-ns", string(rb.nameSpace))
+		}
+		rb.Reset()
+	}
+}
+
 func Test_RowBuilder_ErrorCases(t *testing.T) {
 	rb := CreateRowBuilder()
 	// tags validation
