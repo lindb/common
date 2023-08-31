@@ -29,6 +29,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lindb/common/pkg/logger"
 )
 
 func TestAccessLogMiddleware(t *testing.T) {
@@ -37,7 +39,7 @@ func TestAccessLogMiddleware(t *testing.T) {
 	}()
 
 	r := gin.New()
-	r.Use(AccessLog())
+	r.Use(AccessLog(logger.GetLogger(logger.AccessLogModule, "HTTP")))
 	r.GET("/home", func(c *gin.Context) {
 		_ = c.Error(fmt.Errorf("err"))
 		c.JSON(http.StatusOK, "ok")

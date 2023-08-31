@@ -27,6 +27,11 @@ import (
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
+type log struct {
+	logger              *zap.Logger
+	ignoreModuleAndRole bool
+}
+
 var (
 	// IsCli represents if command-line.
 	IsCli      = false
@@ -35,9 +40,11 @@ var (
 	maxModuleNameLen uint32
 	// RunningAtomicLevel supports changing level on the fly
 	RunningAtomicLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	loggers            = make(map[string]*zap.Logger)
+	loggers            = make(map[string]*log)
 	// uninitialized logger for default usage
-	defaultLogger = newDefaultLogger()
+	defaultLogger   = newDefaultLogger()
+	AccessLogModule = "AccessLog"
+	DefaultLogger   atomic.Value
 )
 
 func init() {
@@ -46,8 +53,11 @@ func init() {
 	initLogLevel(level)
 }
 
-func RegisterLogger(module string, logger *zap.Logger) {
-	loggers[module] = logger
+func RegisterLogger(module string, logger *zap.Logger, ignoreModuleAndRole bool) {
+	loggers[module] = &log{
+		logger:              logger,
+		ignoreModuleAndRole: ignoreModuleAndRole,
+	}
 }
 
 func initLogLevel(level string) {
@@ -87,14 +97,26 @@ func GetLogger(module, role string) Logger {
 			break
 		}
 	}
+	var zapLogger *zap.Logger
+	ignoreModuleAndRole := false
 	log, ok := loggers[module]
 	if !ok {
-		log = defaultLogger
+		defaultLog := DefaultLogger.Load()
+		if defaultLog != nil {
+			zapLogger = defaultLog.(*zap.Logger)
+		}
+	} else {
+		zapLogger = log.logger
+		ignoreModuleAndRole = log.ignoreModuleAndRole
+	}
+	if zapLogger == nil {
+		zapLogger = defaultLogger
 	}
 	return &logger{
-		module: module,
-		role:   role,
-		log:    log,
+		module:              module,
+		role:                role,
+		log:                 zapLogger,
+		ignoreModuleAndRole: ignoreModuleAndRole,
 	}
 }
 

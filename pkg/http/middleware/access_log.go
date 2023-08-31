@@ -34,11 +34,10 @@ import (
 // for testing
 var (
 	pathUnescapeFunc = url.PathUnescape
-	accessLogger     = logger.GetLogger("AccessLog", "HTTP")
 )
 
 // AccessLog returns access log middleware
-func AccessLog() gin.HandlerFunc {
+func AccessLog(log logger.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		r := c.Request
@@ -60,9 +59,9 @@ func AccessLog() gin.HandlerFunc {
 				requestInfo += strings.TrimRight(errMsg, "\n")
 			}
 			if status >= 400 {
-				accessLogger.Error(requestInfo)
+				log.Error(requestInfo)
 			} else {
-				accessLogger.Debug(requestInfo)
+				log.Debug(requestInfo)
 			}
 		}()
 		c.Next()

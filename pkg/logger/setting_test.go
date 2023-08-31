@@ -67,8 +67,16 @@ func Test_InitLogger(t *testing.T) {
 }
 
 func TestRegisterLogger(t *testing.T) {
-	RegisterLogger("test", defaultLogger)
+	RegisterLogger("test", defaultLogger, false)
 	log, ok := loggers["test"]
 	assert.True(t, ok)
-	assert.Equal(t, defaultLogger, log)
+	assert.Equal(t, defaultLogger, log.logger)
+	assert.False(t, log.ignoreModuleAndRole)
+
+	assert.NotNil(t, GetLogger("test", "test"))
+}
+
+func TestRegisterLogger_Default(t *testing.T) {
+	DefaultLogger.Store(defaultLogger)
+	assert.NotNil(t, GetLogger("test11", "test"))
 }

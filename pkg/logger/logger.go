@@ -44,6 +44,13 @@ func SimpleLevelEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(LevelString(l))
 }
 
+// SimpleAccessLevelEncoder serializes access log level
+func SimpleAccessLevelEncoder(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	if isTerminal {
+		enc.AppendString(LevelString(l))
+	}
+}
+
 // LevelString returns a upper-case ASCII representation of the log level.
 func LevelString(l zapcore.Level) string {
 	if !isTerminal {
@@ -94,8 +101,9 @@ type Logger interface {
 
 // logger implements Logger interface.
 type logger struct {
-	module string
-	role   string
+	module              string
+	role                string
+	ignoreModuleAndRole bool
 
 	log *zap.Logger
 }
@@ -126,7 +134,7 @@ func (l *logger) Error(msg string, fields ...zap.Field) {
 
 // formatMsg formats msg using module name
 func (l *logger) formatMsg(msg string) string {
-	if !isTerminal && (l.module == "" && l.role == "") {
+	if !isTerminal || l.ignoreModuleAndRole {
 		return msg
 	}
 	moduleName := fmt.Sprintf("[%*s]", atomic.LoadUint32(&maxModuleNameLen), l.module)
