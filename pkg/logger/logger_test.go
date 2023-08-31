@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -79,4 +80,20 @@ func Test_foramt_msg(t *testing.T) {
 	isTerminal = true
 	log.role = "role"
 	assert.NotEmpty(t, log.formatMsg(""))
+}
+
+func Test_SimpleAccessLevelEncoder(t *testing.T) {
+	isTerminal = true
+	defer func() {
+		isTerminal = IsTerminal(os.Stdout)
+	}()
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = SimpleTimeEncoder
+	encoderConfig.EncodeLevel = SimpleAccessLevelEncoder
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(encoderConfig),
+		os.Stdout,
+		RunningAtomicLevel)
+	log := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2))
+	log.Info("hello", Stack())
 }

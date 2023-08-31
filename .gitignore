@@ -25,6 +25,7 @@ cpu_profile
 *mock.go
 *mock.pb.go
 *mock_test.go
+*.cov
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
