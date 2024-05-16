@@ -78,8 +78,20 @@ func (rcv *Metric) MutateTimestamp(n int64) bool {
 	return rcv._tab.MutateInt64Slot(8, n)
 }
 
-func (rcv *Metric) KeyValues(obj *KeyValue, j int) bool {
+func (rcv *Metric) NameHash() uint64 {
 	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
+	if o != 0 {
+		return rcv._tab.GetUint64(o + rcv._tab.Pos)
+	}
+	return 0
+}
+
+func (rcv *Metric) MutateNameHash(n uint64) bool {
+	return rcv._tab.MutateUint64Slot(10, n)
+}
+
+func (rcv *Metric) KeyValues(obj *KeyValue, j int) bool {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
@@ -91,27 +103,27 @@ func (rcv *Metric) KeyValues(obj *KeyValue, j int) bool {
 }
 
 func (rcv *Metric) KeyValuesLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
 	return 0
 }
 
-func (rcv *Metric) Hash() uint64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
+func (rcv *Metric) KvsHash() uint64 {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
 	if o != 0 {
 		return rcv._tab.GetUint64(o + rcv._tab.Pos)
 	}
 	return 0
 }
 
-func (rcv *Metric) MutateHash(n uint64) bool {
-	return rcv._tab.MutateUint64Slot(12, n)
+func (rcv *Metric) MutateKvsHash(n uint64) bool {
+	return rcv._tab.MutateUint64Slot(14, n)
 }
 
 func (rcv *Metric) SimpleFields(obj *SimpleField, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
 	if o != 0 {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
@@ -123,7 +135,7 @@ func (rcv *Metric) SimpleFields(obj *SimpleField, j int) bool {
 }
 
 func (rcv *Metric) SimpleFieldsLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -131,7 +143,7 @@ func (rcv *Metric) SimpleFieldsLength() int {
 }
 
 func (rcv *Metric) CompoundField(obj *CompoundField) *CompoundField {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
 	if o != 0 {
 		x := rcv._tab.Indirect(o + rcv._tab.Pos)
 		if obj == nil {
@@ -143,8 +155,28 @@ func (rcv *Metric) CompoundField(obj *CompoundField) *CompoundField {
 	return nil
 }
 
+func (rcv *Metric) Exemplars(obj *Exemplar, j int) bool {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
+	if o != 0 {
+		x := rcv._tab.Vector(o)
+		x += flatbuffers.UOffsetT(j) * 4
+		x = rcv._tab.Indirect(x)
+		obj.Init(rcv._tab.Bytes, x)
+		return true
+	}
+	return false
+}
+
+func (rcv *Metric) ExemplarsLength() int {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
+	if o != 0 {
+		return rcv._tab.VectorLen(o)
+	}
+	return 0
+}
+
 func MetricStart(builder *flatbuffers.Builder) {
-	builder.StartObject(7)
+	builder.StartObject(9)
 }
 func MetricAddNamespace(builder *flatbuffers.Builder, namespace flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(namespace), 0)
@@ -155,23 +187,32 @@ func MetricAddName(builder *flatbuffers.Builder, name flatbuffers.UOffsetT) {
 func MetricAddTimestamp(builder *flatbuffers.Builder, timestamp int64) {
 	builder.PrependInt64Slot(2, timestamp, 0)
 }
+func MetricAddNameHash(builder *flatbuffers.Builder, nameHash uint64) {
+	builder.PrependUint64Slot(3, nameHash, 0)
+}
 func MetricAddKeyValues(builder *flatbuffers.Builder, keyValues flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(keyValues), 0)
+	builder.PrependUOffsetTSlot(4, flatbuffers.UOffsetT(keyValues), 0)
 }
 func MetricStartKeyValuesVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
 }
-func MetricAddHash(builder *flatbuffers.Builder, hash uint64) {
-	builder.PrependUint64Slot(4, hash, 0)
+func MetricAddKvsHash(builder *flatbuffers.Builder, kvsHash uint64) {
+	builder.PrependUint64Slot(5, kvsHash, 0)
 }
 func MetricAddSimpleFields(builder *flatbuffers.Builder, simpleFields flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(simpleFields), 0)
+	builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(simpleFields), 0)
 }
 func MetricStartSimpleFieldsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
 }
 func MetricAddCompoundField(builder *flatbuffers.Builder, compoundField flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(compoundField), 0)
+	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(compoundField), 0)
+}
+func MetricAddExemplars(builder *flatbuffers.Builder, exemplars flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(8, flatbuffers.UOffsetT(exemplars), 0)
+}
+func MetricStartExemplarsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+	return builder.StartVector(4, numElems, 4)
 }
 func MetricEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
 	return builder.EndObject()

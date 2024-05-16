@@ -82,28 +82,8 @@ func (rcv *SimpleField) MutateValue(n float64) bool {
 	return rcv._tab.MutateFloat64Slot(8, n)
 }
 
-func (rcv *SimpleField) Exemplars(obj *Exemplar, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
-	if o != 0 {
-		x := rcv._tab.Vector(o)
-		x += flatbuffers.UOffsetT(j) * 4
-		x = rcv._tab.Indirect(x)
-		obj.Init(rcv._tab.Bytes, x)
-		return true
-	}
-	return false
-}
-
-func (rcv *SimpleField) ExemplarsLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
-	if o != 0 {
-		return rcv._tab.VectorLen(o)
-	}
-	return 0
-}
-
 func SimpleFieldStart(builder *flatbuffers.Builder) {
-	builder.StartObject(4)
+	builder.StartObject(3)
 }
 func SimpleFieldAddName(builder *flatbuffers.Builder, name flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(name), 0)
@@ -113,12 +93,6 @@ func SimpleFieldAddType(builder *flatbuffers.Builder, type_ SimpleFieldType) {
 }
 func SimpleFieldAddValue(builder *flatbuffers.Builder, value float64) {
 	builder.PrependFloat64Slot(2, value, 0.0)
-}
-func SimpleFieldAddExemplars(builder *flatbuffers.Builder, exemplars flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(exemplars), 0)
-}
-func SimpleFieldStartExemplarsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
-	return builder.StartVector(4, numElems, 4)
 }
 func SimpleFieldEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
 	return builder.EndObject()

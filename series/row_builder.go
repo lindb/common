@@ -27,7 +27,6 @@ import (
 	"github.com/cespare/xxhash/v2"
 	flatbuffers "github.com/google/flatbuffers/go"
 
-	"github.com/lindb/common/constants"
 	"github.com/lindb/common/pkg/fasttime"
 	"github.com/lindb/common/proto/gen/v1/flatMetricsV1"
 )
@@ -51,6 +50,13 @@ func (items rowKVs) Less(i, j int) bool {
 	return bytes.Compare(items.kvs[i].key, items.kvs[j].key) < 0
 }
 
+type rowExemplar struct {
+	name     []byte
+	traceID  []byte
+	spanID   []byte
+	duration int64
+}
+
 type rowSimpleField struct {
 	name  []byte
 	fType flatMetricsV1.SimpleFieldType
@@ -70,6 +76,9 @@ type RowBuilder struct {
 	simpleFields     []rowSimpleField
 	simpleFieldCount int
 
+	exemplarFields     []rowExemplar
+	exemplarFieldCount int
+
 	compoundFieldValues         []float64
 	compoundFieldExplicitValues []float64
 	compoundFieldMin            float64
@@ -78,12 +87,16 @@ type RowBuilder struct {
 	compoundFieldCount          float64
 
 	// context for building flat metrics
-	flatBuilder *flatbuffers.Builder
-	keys        []flatbuffers.UOffsetT
-	values      []flatbuffers.UOffsetT
-	kvs         []flatbuffers.UOffsetT
-	fieldNames  []flatbuffers.UOffsetT
-	fields      []flatbuffers.UOffsetT
+	flatBuilder    *flatbuffers.Builder
+	keys           []flatbuffers.UOffsetT
+	values         []flatbuffers.UOffsetT
+	kvs            []flatbuffers.UOffsetT
+	fieldNames     []flatbuffers.UOffsetT
+	fields         []flatbuffers.UOffsetT
+	exemplarNames  []flatbuffers.UOffsetT
+	exemplarTraces []flatbuffers.UOffsetT
+	exemplarSpans  []flatbuffers.UOffsetT
+	exemplars      []flatbuffers.UOffsetT
 }
 
 var rowBuilderPool sync.Pool
@@ -159,6 +172,34 @@ func (rb *RowBuilder) AddSimpleField(fieldName []byte, fieldType flatMetricsV1.S
 	// copy field type, field value
 	rb.simpleFields[sfIdx].fType = fieldType
 	rb.simpleFields[sfIdx].value = fieldValue
+	return nil
+}
+
+// AddExemplar appends a exemplar
+// Return false if exemplar is invalid
+func (rb *RowBuilder) AddExemplar(name, traceID, spanID []byte, duration int64) error {
+	if len(name) == 0 {
+		return fmt.Errorf("exemplar name is empty")
+	}
+	if len(traceID) == 0 {
+		return fmt.Errorf("trace id is empty")
+	}
+	if len(spanID) == 0 {
+		return fmt.Errorf("span id is empty")
+	}
+
+	rb.exemplarFieldCount++
+	// add exemplar(cache)
+	if rb.exemplarFieldCount > len(rb.exemplarFields) {
+		rb.exemplarFields = append(rb.exemplarFields, rowExemplar{})
+	}
+	exemplarIdx := rb.exemplarFieldCount - 1
+	// copy exemplar name/trace/span
+	rb.exemplarFields[exemplarIdx].name = append(rb.exemplarFields[exemplarIdx].name[:0], name...)
+	rb.exemplarFields[exemplarIdx].traceID = append(rb.exemplarFields[exemplarIdx].traceID[:0], traceID...)
+	rb.exemplarFields[exemplarIdx].spanID = append(rb.exemplarFields[exemplarIdx].spanID[:0], spanID...)
+	// copy duration
+	rb.exemplarFields[exemplarIdx].duration = duration
 	return nil
 }
 
@@ -241,6 +282,8 @@ func (rb *RowBuilder) Reset() {
 
 	// reset simple fields context
 	rb.simpleFieldCount = 0
+	// reset exemplars context
+	rb.exemplarFieldCount = 0
 
 	// reset compound context
 	rb.compoundFieldValues = rb.compoundFieldValues[:0]
@@ -255,10 +298,15 @@ func (rb *RowBuilder) Reset() {
 	rb.kvs = rb.kvs[:0]
 	rb.fieldNames = rb.fieldNames[:0]
 	rb.fields = rb.fields[:0]
+	rb.exemplarNames = rb.exemplarNames[:0]
+	rb.exemplarTraces = rb.exemplarTraces[:0]
+	rb.exemplarSpans = rb.exemplarSpans[:0]
+	rb.exemplars = rb.exemplars[:0]
 }
 
 var (
 	emptyStringHash = xxhash.Sum64String("")
+	emptyNamespace  = []byte{}
 )
 
 func (rb *RowBuilder) _xxHashOfKVs() uint64 {
@@ -274,6 +322,16 @@ func (rb *RowBuilder) _xxHashOfKVs() uint64 {
 		_ = rb.hashBuf.WriteByte('=')
 		_, _ = rb.hashBuf.Write(rb.rowKVs.kvs[idx].value)
 	}
+	return xxhash.Sum64(rb.hashBuf.Bytes())
+}
+
+func (rb *RowBuilder) _xxHashOfName() uint64 {
+	rb.hashBuf.Reset()
+
+	if len(rb.nameSpace) > 0 {
+		_, _ = rb.hashBuf.Write(rb.nameSpace)
+	}
+	_, _ = rb.hashBuf.Write(rb.metricName)
 	return xxhash.Sum64(rb.hashBuf.Bytes())
 }
 
@@ -300,7 +358,7 @@ func (rb *RowBuilder) dedupTagsThenXXHash() uint64 {
 	// tags with same key will keep order as they are appended after sorting
 	// high index key has higher priority
 	// use 2-pointer algorithm
-	var slow = 0
+	slow := 0
 	for high := 1; high < rb.rowKVs.kvCount; high++ {
 		if !bytes.Equal(rb.rowKVs.kvs[slow].key, rb.rowKVs.kvs[high].key) {
 			slow++
@@ -333,16 +391,33 @@ func (rb *RowBuilder) Build() ([]byte, error) {
 	}
 	// building field names
 	for i := 0; i < rb.simpleFieldCount; i++ {
+		// field name offsets
 		rb.fieldNames = append(rb.fieldNames, rb.flatBuilder.CreateByteString(rb.simpleFields[i].name))
 	}
-
 	for i := 0; i < rb.simpleFieldCount; i++ {
 		flatMetricsV1.SimpleFieldStart(rb.flatBuilder)
-		flatMetricsV1.SimpleFieldAddName(rb.flatBuilder, rb.fieldNames[i])
+		flatMetricsV1.SimpleFieldAddName(rb.flatBuilder, rb.fieldNames[i]) // write field name offset
 		flatMetricsV1.SimpleFieldAddType(rb.flatBuilder, rb.simpleFields[i].fType)
 		flatMetricsV1.SimpleFieldAddValue(rb.flatBuilder, rb.simpleFields[i].value)
 		rb.fields = append(rb.fields, flatMetricsV1.SimpleFieldEnd(rb.flatBuilder))
 	}
+
+	// building exemplars
+	for i := 0; i < rb.exemplarFieldCount; i++ {
+		// exemplar name/trace/span offset
+		rb.exemplarNames = append(rb.exemplarNames, rb.flatBuilder.CreateByteString(rb.exemplarFields[i].name))
+		rb.exemplarTraces = append(rb.exemplarTraces, rb.flatBuilder.CreateByteString(rb.exemplarFields[i].traceID))
+		rb.exemplarSpans = append(rb.exemplarSpans, rb.flatBuilder.CreateByteString(rb.exemplarFields[i].spanID))
+	}
+	for i := 0; i < rb.exemplarFieldCount; i++ {
+		flatMetricsV1.ExemplarStart(rb.flatBuilder)
+		flatMetricsV1.ExemplarAddName(rb.flatBuilder, rb.exemplarNames[i])     // write exemplar name offset
+		flatMetricsV1.ExemplarAddTraceId(rb.flatBuilder, rb.exemplarTraces[i]) // write exemplar trace offset
+		flatMetricsV1.ExemplarAddSpanId(rb.flatBuilder, rb.exemplarSpans[i])   // write exemplar span offset
+		flatMetricsV1.ExemplarAddDuration(rb.flatBuilder, rb.exemplarFields[i].duration)
+		rb.exemplars = append(rb.exemplars, flatMetricsV1.ExemplarEnd(rb.flatBuilder))
+	}
+
 	flatMetricsV1.MetricStartKeyValuesVector(rb.flatBuilder, rb.rowKVs.kvCount)
 	for i := rb.rowKVs.kvCount - 1; i >= 0; i-- {
 		rb.flatBuilder.PrependUOffsetT(rb.kvs[i])
@@ -354,6 +429,13 @@ func (rb *RowBuilder) Build() ([]byte, error) {
 		rb.flatBuilder.PrependUOffsetT(rb.fields[i])
 	}
 	fields := rb.flatBuilder.EndVector(rb.simpleFieldCount)
+
+	// serialize exemplars
+	flatMetricsV1.MetricStartExemplarsVector(rb.flatBuilder, rb.exemplarFieldCount)
+	for i := rb.exemplarFieldCount - 1; i >= 0; i-- {
+		rb.flatBuilder.PrependUOffsetT(rb.exemplars[i])
+	}
+	exemplars := rb.flatBuilder.EndVector(rb.exemplarFieldCount)
 
 	var (
 		compoundFieldBounds flatbuffers.UOffsetT
@@ -388,13 +470,14 @@ func (rb *RowBuilder) Build() ([]byte, error) {
 
 Serialize:
 	metricName := rb.flatBuilder.CreateByteString(rb.metricName)
+	var namespace flatbuffers.UOffsetT
 
 	if len(rb.nameSpace) == 0 {
-		// be careful, rb.namespace is reused, need create new default value
-		rb.nameSpace = []byte(constants.DefaultNamespace)
+		namespace = rb.flatBuilder.CreateByteString(emptyNamespace)
+	} else {
+		namespace = rb.flatBuilder.CreateByteString(rb.nameSpace)
 	}
 
-	namespace := rb.flatBuilder.CreateByteString(rb.nameSpace)
 	flatMetricsV1.MetricStart(rb.flatBuilder)
 	flatMetricsV1.MetricAddNamespace(rb.flatBuilder, namespace)
 	flatMetricsV1.MetricAddName(rb.flatBuilder, metricName)
@@ -402,9 +485,11 @@ Serialize:
 		rb.timestamp = fasttime.UnixMilliseconds()
 	}
 	flatMetricsV1.MetricAddTimestamp(rb.flatBuilder, rb.timestamp)
+	flatMetricsV1.MetricAddNameHash(rb.flatBuilder, rb._xxHashOfName())
 	flatMetricsV1.MetricAddKeyValues(rb.flatBuilder, kvs)
-	flatMetricsV1.MetricAddHash(rb.flatBuilder, hash)
+	flatMetricsV1.MetricAddKvsHash(rb.flatBuilder, hash)
 	flatMetricsV1.MetricAddSimpleFields(rb.flatBuilder, fields)
+	flatMetricsV1.MetricAddExemplars(rb.flatBuilder, exemplars)
 	if compoundField != 0 {
 		flatMetricsV1.MetricAddCompoundField(rb.flatBuilder, compoundField)
 	}
@@ -416,3 +501,5 @@ Serialize:
 }
 
 func (rb *RowBuilder) SimpleFieldsLen() int { return rb.simpleFieldCount }
+
+func (rb *RowBuilder) ExemplarsLen() int { return rb.exemplarFieldCount }
