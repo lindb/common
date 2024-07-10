@@ -65,7 +65,7 @@ func Test_RowBuilder(t *testing.T) {
 		if i%2 == 0 {
 			assert.Equal(t, "test", string(rb.nameSpace))
 		} else {
-			assert.Equal(t, "default-ns", string(rb.nameSpace))
+			assert.Equal(t, "", string(rb.nameSpace))
 		}
 		rb.Reset()
 	}
@@ -293,7 +293,7 @@ func buildFlatMetric(builder *flatbuffers.Builder) {
 	flatMetricsV1.MetricAddName(builder, metricName)
 	flatMetricsV1.MetricAddTimestamp(builder, fasttime.UnixMilliseconds())
 	flatMetricsV1.MetricAddKeyValues(builder, kvsAt)
-	flatMetricsV1.MetricAddHash(builder, xxhash.Sum64String("hello"))
+	flatMetricsV1.MetricAddKvsHash(builder, xxhash.Sum64String("hello"))
 	flatMetricsV1.MetricAddSimpleFields(builder, fieldsAt)
 	flatMetricsV1.MetricAddCompoundField(builder, compoundField)
 

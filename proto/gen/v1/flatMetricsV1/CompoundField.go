@@ -50,28 +50,8 @@ func (rcv *CompoundField) Table() flatbuffers.Table {
 	return rcv._tab
 }
 
-func (rcv *CompoundField) Exemplars(obj *Exemplar, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
-	if o != 0 {
-		x := rcv._tab.Vector(o)
-		x += flatbuffers.UOffsetT(j) * 4
-		x = rcv._tab.Indirect(x)
-		obj.Init(rcv._tab.Bytes, x)
-		return true
-	}
-	return false
-}
-
-func (rcv *CompoundField) ExemplarsLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
-	if o != 0 {
-		return rcv._tab.VectorLen(o)
-	}
-	return 0
-}
-
 func (rcv *CompoundField) Min() float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
 	if o != 0 {
 		return rcv._tab.GetFloat64(o + rcv._tab.Pos)
 	}
@@ -79,11 +59,11 @@ func (rcv *CompoundField) Min() float64 {
 }
 
 func (rcv *CompoundField) MutateMin(n float64) bool {
-	return rcv._tab.MutateFloat64Slot(6, n)
+	return rcv._tab.MutateFloat64Slot(4, n)
 }
 
 func (rcv *CompoundField) Max() float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(8))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
 	if o != 0 {
 		return rcv._tab.GetFloat64(o + rcv._tab.Pos)
 	}
@@ -91,11 +71,11 @@ func (rcv *CompoundField) Max() float64 {
 }
 
 func (rcv *CompoundField) MutateMax(n float64) bool {
-	return rcv._tab.MutateFloat64Slot(8, n)
+	return rcv._tab.MutateFloat64Slot(6, n)
 }
 
 func (rcv *CompoundField) Sum() float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(8))
 	if o != 0 {
 		return rcv._tab.GetFloat64(o + rcv._tab.Pos)
 	}
@@ -103,11 +83,11 @@ func (rcv *CompoundField) Sum() float64 {
 }
 
 func (rcv *CompoundField) MutateSum(n float64) bool {
-	return rcv._tab.MutateFloat64Slot(10, n)
+	return rcv._tab.MutateFloat64Slot(8, n)
 }
 
 func (rcv *CompoundField) Count() float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
 	if o != 0 {
 		return rcv._tab.GetFloat64(o + rcv._tab.Pos)
 	}
@@ -115,11 +95,11 @@ func (rcv *CompoundField) Count() float64 {
 }
 
 func (rcv *CompoundField) MutateCount(n float64) bool {
-	return rcv._tab.MutateFloat64Slot(12, n)
+	return rcv._tab.MutateFloat64Slot(10, n)
 }
 
 func (rcv *CompoundField) ExplicitBounds(j int) float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
 		return rcv._tab.GetFloat64(a + flatbuffers.UOffsetT(j*8))
@@ -128,7 +108,7 @@ func (rcv *CompoundField) ExplicitBounds(j int) float64 {
 }
 
 func (rcv *CompoundField) ExplicitBoundsLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -136,7 +116,7 @@ func (rcv *CompoundField) ExplicitBoundsLength() int {
 }
 
 func (rcv *CompoundField) MutateExplicitBounds(j int, n float64) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
 		return rcv._tab.MutateFloat64(a+flatbuffers.UOffsetT(j*8), n)
@@ -145,7 +125,7 @@ func (rcv *CompoundField) MutateExplicitBounds(j int, n float64) bool {
 }
 
 func (rcv *CompoundField) Values(j int) float64 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
 		return rcv._tab.GetFloat64(a + flatbuffers.UOffsetT(j*8))
@@ -154,7 +134,7 @@ func (rcv *CompoundField) Values(j int) float64 {
 }
 
 func (rcv *CompoundField) ValuesLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -162,7 +142,7 @@ func (rcv *CompoundField) ValuesLength() int {
 }
 
 func (rcv *CompoundField) MutateValues(j int, n float64) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
 	if o != 0 {
 		a := rcv._tab.Vector(o)
 		return rcv._tab.MutateFloat64(a+flatbuffers.UOffsetT(j*8), n)
@@ -171,34 +151,28 @@ func (rcv *CompoundField) MutateValues(j int, n float64) bool {
 }
 
 func CompoundFieldStart(builder *flatbuffers.Builder) {
-	builder.StartObject(7)
-}
-func CompoundFieldAddExemplars(builder *flatbuffers.Builder, exemplars flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(exemplars), 0)
-}
-func CompoundFieldStartExemplarsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
-	return builder.StartVector(4, numElems, 4)
+	builder.StartObject(6)
 }
 func CompoundFieldAddMin(builder *flatbuffers.Builder, min float64) {
-	builder.PrependFloat64Slot(1, min, 0.0)
+	builder.PrependFloat64Slot(0, min, 0.0)
 }
 func CompoundFieldAddMax(builder *flatbuffers.Builder, max float64) {
-	builder.PrependFloat64Slot(2, max, 0.0)
+	builder.PrependFloat64Slot(1, max, 0.0)
 }
 func CompoundFieldAddSum(builder *flatbuffers.Builder, sum float64) {
-	builder.PrependFloat64Slot(3, sum, 0.0)
+	builder.PrependFloat64Slot(2, sum, 0.0)
 }
 func CompoundFieldAddCount(builder *flatbuffers.Builder, count float64) {
-	builder.PrependFloat64Slot(4, count, 0.0)
+	builder.PrependFloat64Slot(3, count, 0.0)
 }
 func CompoundFieldAddExplicitBounds(builder *flatbuffers.Builder, explicitBounds flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(explicitBounds), 0)
+	builder.PrependUOffsetTSlot(4, flatbuffers.UOffsetT(explicitBounds), 0)
 }
 func CompoundFieldStartExplicitBoundsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(8, numElems, 8)
 }
 func CompoundFieldAddValues(builder *flatbuffers.Builder, values flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(values), 0)
+	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(values), 0)
 }
 func CompoundFieldStartValuesVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(8, numElems, 8)

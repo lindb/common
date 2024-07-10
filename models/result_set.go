@@ -29,14 +29,15 @@ import (
 
 // ResultSet represents the query result set
 type ResultSet struct {
+	Stats      *NodeStats `json:"stats,omitempty"`
+	Namespace  string     `json:"namespace,omitempty"`
 	MetricName string     `json:"metricName,omitempty"`
 	GroupBy    []string   `json:"groupBy,omitempty"`
 	Fields     []string   `json:"fields,omitempty"`
+	Series     []*Series  `json:"series,omitempty"`
 	StartTime  int64      `json:"startTime,omitempty"`
 	EndTime    int64      `json:"endTime,omitempty"`
 	Interval   int64      `json:"interval,omitempty"`
-	Series     []*Series  `json:"series,omitempty"`
-	Stats      *NodeStats `json:"stats,omitempty"`
 }
 
 // NewResultSet creates a new result set
@@ -49,10 +50,17 @@ func (rs *ResultSet) AddSeries(series *Series) {
 	rs.Series = append(rs.Series, series)
 }
 
+type Exemplar struct {
+	TraceID  string `json:"traceId"`
+	SpanID   string `json:"spanId"`
+	Duration int64  `json:"duration"`
+}
+
 // Series represents one time series for metric.
 type Series struct {
-	Tags   map[string]string            `json:"tags,omitempty"`
-	Fields map[string]map[int64]float64 `json:"fields,omitempty"`
+	Tags      map[string]string                `json:"tags,omitempty"`
+	Fields    map[string]map[int64]float64     `json:"fields,omitempty"`
+	Exemplars map[string]map[int64][]*Exemplar `json:"exemplars,omitempty"`
 
 	TagValues string `json:"-"` // return series in order by tag values
 }

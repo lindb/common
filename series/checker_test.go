@@ -101,7 +101,8 @@ func Benchmark_Marshal_Proto(b *testing.B) {
 
 	for i := 0; i < 10; i++ {
 		m.SimpleFields = append(m.SimpleFields, &protoMetricsV1.SimpleField{
-			Name: "counter" + strconv.Itoa(i), Type: protoMetricsV1.SimpleFieldType_LAST, Value: float64(i)})
+			Name: "counter" + strconv.Itoa(i), Type: protoMetricsV1.SimpleFieldType_LAST, Value: float64(i),
+		})
 		m.Tags = append(m.Tags, &protoMetricsV1.KeyValue{Key: "key" + strconv.Itoa(i), Value: "value" + strconv.Itoa(i)})
 	}
 	b.ReportAllocs()
@@ -117,7 +118,8 @@ func Benchmark_Unmarshal_Proto_10Fields(b *testing.B) {
 
 	for i := 0; i < 10; i++ {
 		m.SimpleFields = append(m.SimpleFields, &protoMetricsV1.SimpleField{
-			Name: "counter" + strconv.Itoa(i), Type: protoMetricsV1.SimpleFieldType_LAST, Value: float64(i)})
+			Name: "counter" + strconv.Itoa(i), Type: protoMetricsV1.SimpleFieldType_LAST, Value: float64(i),
+		})
 		m.Tags = append(m.Tags, &protoMetricsV1.KeyValue{Key: "key" + strconv.Itoa(i), Value: "value" + strconv.Itoa(i)})
 	}
 	data, _ := m.Marshal()
@@ -153,7 +155,7 @@ func Test_FlatMetric(t *testing.T) {
 	assert.Equal(t, "hello", string(m.Name()))
 	assert.Equal(t, "default-ns", string(m.Namespace()))
 	assert.Zero(t, m.Timestamp())
-	assert.Zero(t, m.Hash())
+	assert.Zero(t, m.KvsHash())
 }
 
 func Test_FlatMetric_Size(t *testing.T) {

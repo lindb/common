@@ -20,31 +20,35 @@ message MetricList {
 // - Fields contains exemplars, names, and the underlying value or value list
 //
 //     Metric
-//  +---------------+
-//  |namespace      |
-//  |name           |
-//  |tags           |
-//  |tags-hash      |
-//  |timestamp      |     +------------------------------------+
-//  |simple-fields  |---> |Last, Sum, ...                     |
-//  |compound-field |---> |Histogram                           |
-//  +---------------+     +------------------------------------+
+//  +----------------+
+//  |namespace       |
+//  |name            |
+//  |tags            |
+//  |tags-hash       |
+//  |timestamp       |     +------------------------------------+
+//  |simple-fields   |---> |Last, Sum, ...                      |
+//  |compound-field  |---> |Histogram                           |
+//  |exemplar-fields |---> |Exemplar                            |
+//  +----------------+     +------------------------------------+
 //
 //  SimpleField   [One of Last, DeltaSum, Min, Max ...]
 //  +-----------+
 //  |name       |  // field-name
 //  |type       |  // field-type
-//  |exemplars  |  // exemplars of series
 //  +-----------+
 //  |value      |
 //  +-----------+
 //
 //  CompoundField  [DeltaHistogram ...]
-//  +-----------+
-//  |exemplars  |  // exemplars of series
 //  +-----+-----+-----+-----+-----+-----+
 //  |min  |max  |sum  |value|value|.....|
 //  +-----+-----+-----+-----+-----+-----+
+//
+//  ExemplarField  [Exemplar ...]
+//  +-----+----------+---------+----- ----+
+//  |name | trace id | span id | duration |
+//  +-----+----------+---------+----------+
+
 message Metric {
     string namespace = 1;
     string name = 2;
@@ -54,7 +58,9 @@ message Metric {
     uint64 tags_hash = 5;
     repeated SimpleField simple_fields = 6;
     CompoundField compound_field = 7;
+    repeated Exemplar exemplars = 8;
 }
+
 enum SimpleFieldType {
     SIMPLE_UNSPECIFIED = 0;
     LAST = 1;
@@ -64,17 +70,14 @@ enum SimpleFieldType {
     FIRST = 5;
 }
 
-
 message SimpleField {
     string name = 1;
     SimpleFieldType type = 2;
-    repeated Exemplar exemplars = 3;
     double value = 4;
 }
 
 // CompoundData is compound data used for histogram field.
 message CompoundField {
-    repeated Exemplar exemplars = 1;
     double min = 2;
     double max = 3;
     double sum = 4;
@@ -107,12 +110,15 @@ message KeyValue {
 // Exemplars in LindDB wont' hold any information about the environment
 // it is used to record span and trace ID for a specify series.
 message Exemplar {
+	// Exemplar Name
+    string name = 1;
+
     // Span ID of the exemplar trace.
-    bytes span_id = 1;
+    string span_id = 2;
 
     // Trace ID of the exemplar trace.
-    bytes trace_id = 2;
+    string trace_id = 3;
 
     // Duration of the exemplar span.
-    int64 duration = 3;
+    int64 duration = 4;
 }
