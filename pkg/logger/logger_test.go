@@ -27,6 +27,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+func Test_Logger_Enabled(t *testing.T) {
+	logger1 := GetLogger("PKG", "Log")
+	assert.False(t, logger1.Enabled(DebugLevel))
+	assert.True(t, logger1.Enabled(WarnLevel))
+	assert.True(t, logger1.Enabled(FatalLevel))
+}
+
 func Test_Logger(t *testing.T) {
 	logger1 := GetLogger("PKG", "Log")
 	RunningAtomicLevel.SetLevel(zapcore.DebugLevel)

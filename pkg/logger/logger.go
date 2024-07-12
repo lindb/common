@@ -30,8 +30,16 @@ import (
 )
 
 var (
-	isWindowsFn = isWindows
+	DebugLevel  = zapcore.DebugLevel
+	InfoLevel   = zapcore.InfoLevel
+	WarnLevel   = zapcore.WarnLevel
+	ErrorLevel  = zapcore.ErrorLevel
+	DPanicLevel = zapcore.DPanicLevel
+	PanicLevel  = zapcore.PanicLevel
+	FatalLevel  = zapcore.FatalLevel
 )
+
+var isWindowsFn = isWindows
 
 // SimpleTimeEncoder serializes a time.Time to a simplified format without timezone
 func SimpleTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
@@ -97,15 +105,21 @@ type Logger interface {
 	// Error logs a message at ErrorLevel. The message includes any fields passed
 	// at the log site, as well as any fields accumulated on the logger.
 	Error(msg string, fields ...zap.Field)
+	// Enabled decides whether a given logging level is enabled when logging a message.
+	Enabled(level zapcore.Level) bool
 }
 
 // logger implements Logger interface.
 type logger struct {
+	log                 *zap.Logger
 	module              string
 	role                string
 	ignoreModuleAndRole bool
+}
 
-	log *zap.Logger
+// Enabled decides whether a given logging level is enabled when logging a message.
+func (l *logger) Enabled(level zapcore.Level) bool {
+	return l.log.Core().Enabled(level)
 }
 
 // Debug logs a message at DebugLevel. The message includes any fields passed
