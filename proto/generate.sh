@@ -23,7 +23,7 @@ function collect() {
 function gen() {
     dir_name=$1
     base_name=$(basename $2 ".proto")
-    protoc -I. --gofast_out=plugins=grpc,$GO_OUT_M:../gen/$dir_name/$base_name $2
+    protoc -I. --go_out=../.. $2
 }
 
 # brew install flatbuffers

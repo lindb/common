@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package protoMetricsV1;
+package metrics;
+
+option go_package = "proto/gen/v1/metrics";
 
 message MetricList {
   repeated Metric metrics = 2;

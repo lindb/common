@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package protoTraceV1;
+package trace;
+
+option go_package = "proto/gen/v1/trace";
 
 message CallStack {
   Resource resource = 1;

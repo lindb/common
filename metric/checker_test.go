@@ -26,10 +26,11 @@ import (
 	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/klauspost/compress/gzip"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/lindb/common/pkg/fasttime"
 	"github.com/lindb/common/proto/gen/v1/flatMetricsV1"
-	protoMetricsV1 "github.com/lindb/common/proto/gen/v1/linmetrics"
+	protoMetricsV1 "github.com/lindb/common/proto/gen/v1/metrics"
 )
 
 func Test_Sanitize(t *testing.T) {
@@ -109,7 +110,7 @@ func Benchmark_Marshal_Proto(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = m.Marshal()
+		_, _ = proto.Marshal(&m)
 	}
 }
 
@@ -122,13 +123,13 @@ func Benchmark_Unmarshal_Proto_10Fields(b *testing.B) {
 		})
 		m.Tags = append(m.Tags, &protoMetricsV1.KeyValue{Key: "key" + strconv.Itoa(i), Value: "value" + strconv.Itoa(i)})
 	}
-	data, _ := m.Marshal()
+	data, _ := proto.Marshal(&m)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	var metric protoMetricsV1.Metric
 	for i := 0; i < b.N; i++ {
-		_ = metric.Unmarshal(data)
+		_ = proto.Unmarshal(data, &metric)
 		for x := 0; x < 10; x++ {
 			f := metric.SimpleFields[x]
 			_ = f.Name

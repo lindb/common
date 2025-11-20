@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package protoLogV1;
+package log;
+
+option go_package = "proto/gen/v1/log";
 
 message Logs {
   repeated Log logs = 2;
