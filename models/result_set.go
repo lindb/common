@@ -19,6 +19,7 @@ package models
 
 import (
 	"fmt"
+	"maps"
 	"path"
 	"sort"
 
@@ -50,12 +51,6 @@ func (rs *ResultSet) AddSeries(series *Series) {
 	rs.Series = append(rs.Series, series)
 }
 
-type Exemplar struct {
-	TraceID  string `json:"traceId"`
-	SpanID   string `json:"spanId"`
-	Duration int64  `json:"duration"`
-}
-
 // Series represents one time series for metric.
 type Series struct {
 	Tags      map[string]string                `json:"tags,omitempty"`
@@ -81,9 +76,7 @@ func (s *Series) AddField(fieldName string, points *Points) {
 		s.Fields[fieldName] = points.Points
 		return
 	}
-	for t, v := range points.Points {
-		dataPoints[t] = v
-	}
+	maps.Copy(dataPoints, points.Points)
 }
 
 // Points represents the data points of the field

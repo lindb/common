@@ -22,9 +22,7 @@ import (
 	"time"
 )
 
-var (
-	parseTimeFunc = time.ParseInLocation
-)
+var parseTimeFunc = time.ParseInLocation
 
 const (
 	// OneSecond is the number of millisecond for a second

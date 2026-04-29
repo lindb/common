@@ -49,7 +49,7 @@ func (m *Metadata) ToTable() (rows int, tableStr string) {
 // toTableForStringValues returns table for string values.
 func (m *Metadata) toTableForStringValues(header table.Row, writer table.Writer) (rows int, tableStr string) {
 	writer.AppendHeader(header)
-	values := m.Values.([]interface{})
+	values := m.Values.([]any)
 	for i := range values {
 		writer.AppendRow(table.Row{values[i]})
 	}
@@ -59,9 +59,9 @@ func (m *Metadata) toTableForStringValues(header table.Row, writer table.Writer)
 // toTableForMapValues returns table for map values.
 func (m *Metadata) toTableForMapValues(header table.Row, cols []string, writer table.Writer) (rows int, tableStr string) {
 	writer.AppendHeader(header)
-	values := m.Values.([]interface{})
+	values := m.Values.([]any)
 	for _, value := range values {
-		mapValue := value.(map[string]interface{})
+		mapValue := value.(map[string]any)
 		var row table.Row
 		for _, col := range cols {
 			row = append(row, mapValue[col])
