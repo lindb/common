@@ -78,7 +78,9 @@ func newDefaultLogger() *zap.Logger {
 		zapcore.NewConsoleEncoder(encoderConfig),
 		os.Stdout,
 		RunningAtomicLevel)
-	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2))
+	// Skip 1 frame to point at the caller of (*logger).Error/Warn/Info/Debug,
+	// not at the wrapper method itself in pkg/logger/logger.go.
+	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
 func IsDebug() bool {
